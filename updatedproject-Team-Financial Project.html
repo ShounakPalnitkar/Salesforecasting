@@ -1,0 +1,1922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Sales Forecasting Analytics</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.0.4/build/global/luxon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --warning: #f39c12;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #27ae60;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            border: none;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        
+        .metric-card {
+            text-align: center;
+            padding: 15px;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        .control-panel {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .nav-pills .nav-link.active {
+            background-color: var(--secondary);
+        }
+        
+        .btn-primary {
+            background-color: var(--secondary);
+            border-color: var(--secondary);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .slider-container {
+            margin-bottom: 15px;
+        }
+        
+        .slider-value {
+            font-weight: 600;
+            color: var(--secondary);
+        }
+        
+        .forecast-confidence {
+            background-color: rgba(52, 152, 219, 0.1);
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        
+        .model-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+        
+        .model-arima {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+        }
+        
+        .model-lstm {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+        }
+        
+        .model-xgboost {
+            background-color: rgba(155, 89, 182, 0.2);
+            color: #8e44ad;
+        }
+        
+        .scenario-comparison {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .feature-importance-bar {
+            height: 24px;
+            background-color: var(--secondary);
+            border-radius: 4px;
+            margin-bottom: 8px;
+            color: white;
+            padding-left: 10px;
+            line-height: 24px;
+        }
+        
+        .data-input-section {
+            margin-bottom: 20px;
+        }
+        
+        .data-input-row {
+            margin-bottom: 10px;
+        }
+        
+        .input-table {
+            font-size: 14px;
+        }
+        
+        .input-table th {
+            background-color: var(--light);
+        }
+        
+        .data-preview {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .help-text {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--secondary);
+        }
+        
+        .alert-section {
+            margin-bottom: 20px;
+        }
+        
+        .alert-card {
+            border-left: 4px solid var(--warning);
+        }
+        
+        .risk-indicator {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .risk-low {
+            background-color: var(--success);
+        }
+        
+        .risk-medium {
+            background-color: var(--warning);
+        }
+        
+        .risk-high {
+            background-color: var(--accent);
+        }
+        
+        .recommendation-card {
+            background-color: rgba(39, 174, 96, 0.1);
+            border-left: 4px solid var(--success);
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        
+        .anomaly-point {
+            background-color: rgba(231, 76, 60, 0.7);
+            border-radius: 50%;
+            width: 10px;
+            height: 10px;
+        }
+        
+        .preventive-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .preventive-measure {
+            padding: 12px;
+            border-left: 4px solid var(--secondary);
+            background-color: white;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        
+        .dashboard-step {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background-color: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            background-color: var(--secondary);
+            color: white;
+            border-radius: 50%;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        
+        .visualization-section {
+            margin-bottom: 30px;
+        }
+        
+        .viz-card {
+            height: 100%;
+        }
+        
+        .viz-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .story-flow {
+            position: relative;
+            padding-left: 40px;
+        }
+        
+        .story-flow::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: var(--secondary);
+            opacity: 0.3;
+        }
+        
+        .story-step {
+            position: relative;
+            margin-bottom: 30px;
+        }
+        
+        .story-step::before {
+            content: '';
+            position: absolute;
+            left: -25px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--secondary);
+        }
+        
+        .insight-box {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-left: 4px solid var(--secondary);
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        /* New styles for additional features */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .feature-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            color: var(--secondary);
+            margin-bottom: 15px;
+        }
+        
+        .dark-mode {
+            background-color: #1a1a1a;
+            color: #f0f0f0;
+        }
+        
+        .dark-mode .card {
+            background-color: #2d2d2d;
+            color: #f0f0f0;
+        }
+        
+        .dark-mode .feature-card {
+            background-color: #2d2d2d;
+            color: #f0f0f0;
+        }
+        
+        .mode-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--secondary);
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .tab-content {
+            padding: 20px 0;
+        }
+        
+        .nav-advanced {
+            margin-top: 30px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .advanced-features {
+            margin-top: 40px;
+        }
+        
+        .section-title {
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--secondary);
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--primary);">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-chart-line me-2"></i>
+                Advanced Sales Forecasting Analytics
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="nlqButton"><i class="fas fa-question-circle me-1"></i> Ask AI</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal"><i class="fas fa-cog me-1"></i> Settings</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="dashboard-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1>Professional Sales Forecasting Dashboard</h1>
+                    <p class="lead">AI-powered forecasting with preventive measures and risk mitigation</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <i class="fas fa-analytics fa-4x"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Story Flow -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-sitemap me-2"></i>Dashboard Flow</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="story-flow">
+                            <div class="story-step">
+                                <h5>1. Input Your Data</h5>
+                                <p>Start by providing your sales data either manually or through CSV upload.</p>
+                            </div>
+                            <div class="story-step">
+                                <h5>2. Generate Forecast</h5>
+                                <p>Our system analyzes your data and generates accurate sales predictions.</p>
+                            </div>
+                            <div class="story-step">
+                                <h5>3. Review Insights</h5>
+                                <p>Examine key metrics, visualizations, and anomaly detection results.</p>
+                            </div>
+                            <div class="story-step">
+                                <h5>4. Scenario Planning</h5>
+                                <p>Test different business scenarios to understand potential outcomes.</p>
+                            </div>
+                            <div class="story-step">
+                                <h5>5. Preventive Actions</h5>
+                                <p>Receive tailored recommendations based on your specific situation.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert Section -->
+        <div class="row alert-section d-none" id="alertSection">
+            <div class="col-md-12">
+                <div class="card alert-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5><i class="fas fa-exclamation-triangle me-2 text-warning"></i> Risk Alert</h5>
+                                <p class="mb-0" id="riskAlertText">Potential stockout risk detected in the next 30 days</p>
+                            </div>
+                            <button class="btn btn-outline-warning" id="viewRecommendations">View Recommendations</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Analytics Navigation -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="section-title">Advanced Analytics Features</h4>
+                        <ul class="nav nav-pills nav-advanced" id="advancedAnalyticsTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="forecasting-tab" data-bs-toggle="pill" data-bs-target="#forecasting" type="button" role="tab">Multi-Product Forecasting</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="segmentation-tab" data-bs-toggle="pill" data-bs-target="#segmentation" type="button" role="tab">Customer Segmentation</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="pricing-tab" data-bs-toggle="pill" data-bs-target="#pricing" type="button" role="tab">Pricing Analytics</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="inventory-tab" data-bs-toggle="pill" data-bs-target="#inventory" type="button" role="tab">Inventory Optimization</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="technical-tab" data-bs-toggle="pill" data-bs-target="#technical" type="button" role="tab">AI Features</button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="advancedAnalyticsTabContent">
+                            <div class="tab-pane fade show active" id="forecasting" role="tabpanel">
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <h5>Multi-Product/Multi-Category Forecasting</h5>
+                                        <p>Forecast sales across different product categories and individual SKUs with precision.</p>
+                                        <div class="feature-grid">
+                                            <div class="feature-card">
+                                                <div class="feature-icon">
+                                                    <i class="fas fa-boxes"></i>
+                                                </div>
+                                                <h6>Product Hierarchy</h6>
+                                                <p>Forecast at category, subcategory, and SKU levels with consistent reconciliation.</p>
+                                            </div>
+                                            <div class="feature-card">
+                                                <div class="feature-icon">
+                                                    <i class="fas fa-project-diagram"></i>
+                                                </div>
+                                                <h6>New Product Forecasting</h6>
+                                                <p>Leverage transfer learning to forecast demand for new products with limited history.</p>
+                                            </div>
+                                            <div class="feature-card">
+                                                <div class="feature-icon">
+                                                    <i class="fas fa-chart-pie"></i>
+                                                </div>
+                                                <h6>Market Share Analysis</h6>
+                                                <p>Track your brand's performance against competitors and overall market trends.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="chart-container">
+                                            <canvas id="multiProductChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="segmentation" role="tabpanel">
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <h5>Customer Segmentation & Lifetime Value</h5>
+                                        <p>Identify high-value customer segments and predict their lifetime value.</p>
+                                        <div class="feature-grid">
+                                            <div class="feature-card">
+                                                <div class="feature-icon">
+                                                    <i class="fas fa-users"></i>
+                                                </div>
+                                                <h6>Segmentation Analysis</h6>
+                                                <p>Cluster customers based on purchasing behavior, demographics, and value.</p>
+                                            </div>
+                                            <div class="feature-card">
+                                                <div class="feature-icon">
+                                                    <i class="fas fa-coins"></i>
+                                                </div>
+                                                <h6>Lifetime Value Prediction</h6>
+                                                <p>Predict the future value of customer segments to guide marketing investments.</p>
+                                            </div>
+                                            <div class="feature-card">
+                                                <div class="feature-icon">
+                                                    <i class="fas fa-retweet"></i>
+                                                </div>
+                                                <h6>Churn Prediction</h6>
+                                                <p>Identify customers at risk of churning and take proactive retention measures.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="chart-container">
+                                            <canvas id="segmentationChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="pricing" role="tabpanel">
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <h5>Pricing & Promotion Analytics</h5>
+                                        <p>Optimize your pricing strategy and maximize promotion ROI.</p>
+                                        <div class="feature-grid">
+                                            <div class="feature-card">
+                                                <div class="feature-icon">
+                                                    <i class="fas fa-tags"></i>
+                                                </div>
+                                                <h6>Price Elasticity Modeling</h6>
+                                                <p>Understand how price changes impact demand for your products.</p>
+                                            </div>
+                                            <div class="feature-card">
+                                                <div class="feature-icon">
+                                                    <i class="fas fa-percentage"></i>
+                                                </div>
+                                                <h6>Promotion ROI Calculator</h6>
+                                                <p>Measure the effectiveness of promotions and optimize future campaigns.</p>
+                                            </div>
+                                            <div class="feature-card">
+                                                <div class="feature-icon">
+                                                    <i class="fas fa-balance-scale"></i>
+                                                </div>
+                                                <h6>Competitive Intelligence</h6>
+                                                <p>Track competitor pricing and promotions to inform your strategy.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="chart-container">
+                                            <canvas id="pricingChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="inventory" role="tabpanel">
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <h5>Inventory & Supply Chain Optimization</h5>
+                                        <p>Balance inventory levels to minimize costs while meeting customer demand.</p>
+                                        <div class="feature-grid">
+                                            <div class="feature-card">
+                                                <div class="feature-icon">
+                                                    <i class="fas fa-warehouse"></i>
+                                                </div>
+                                                <h6>Inventory Optimization</h6>
+                                                <p>Determine optimal stock levels based on demand forecasts and service level targets.</p>
+                                            </div>
+                                            <div class="feature-card">
+                                                <div class="feature-icon">
+                                                    <i class="fas fa-shipping-fast"></i>
+                                                </div>
+                                                <h6>Supply Chain Risk Indicators</h6>
+                                                <p>Monitor potential disruptions in your supply chain and develop contingency plans.</p>
+                                            </div>
+                                            <div class="feature-card">
+                                                <div class="feature-icon">
+                                                    <i class="fas fa-exchange-alt"></i>
+                                                </div>
+                                                <h6>Supplier Performance Dashboard</h6>
+                                                <p>Track supplier reliability and performance metrics to inform procurement decisions.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="chart-container">
+                                            <canvas id="inventoryChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="technical" role="tabpanel">
+                                <div class="row mt-3">
+                                    <div class="col-md-12">
+                                        <h5>Advanced AI & Technical Features</h5>
+                                        <p>Leverage cutting-edge machine learning capabilities for superior forecasting accuracy.</p>
+                                        <div class="feature-grid">
+                                            <div class="feature-card">
+                                                <div class="feature-icon">
+                                                    <i class="fas fa-robot"></i>
+                                                </div>
+                                                <h6>Automated Model Selection</h6>
+                                                <p>Our system automatically tests multiple models and selects the best performer for your data.</p>
+                                            </div>
+                                            <div class="feature-card">
+                                                <div class="feature-icon">
+                                                    <i class="fas fa-sliders-h"></i>
+                                                </div>
+                                                <h6>Hyperparameter Tuning</h6>
+                                                <p>Optimize model parameters for maximum accuracy with our intuitive tuning interface.</p>
+                                            </div>
+                                            <div class="feature-card">
+                                                <div class="feature-icon">
+                                                    <i class="fas fa-brain"></i>
+                                                </div>
+                                                <h6>Transfer Learning</h6>
+                                                <p>Apply patterns learned from existing products to forecast new products with limited history.</p>
+                                            </div>
+                                            <div class="feature-card">
+                                                <div class="feature-icon">
+                                                    <i class="fas fa-language"></i>
+                                                </div>
+                                                <h6>Natural Language Query</h6>
+                                                <p>Ask questions about your data in plain English and get instant insights.</p>
+                                            </div>
+                                            <div class="feature-card">
+                                                <div class="feature-icon">
+                                                    <i class="fas fa-bolt"></i>
+                                                </div>
+                                                <h6>Real-time Updates</h6>
+                                                <p>Forecasts update automatically as new data arrives, ensuring you always have the latest insights.</p>
+                                            </div>
+                                            <div class="feature-card">
+                                                <div class="feature-icon">
+                                                    <i class="fas fa-cloud-download-alt"></i>
+                                                </div>
+                                                <h6>External Data Integration</h6>
+                                                <p>Incorporate weather, economic indicators, and events into your forecasts for improved accuracy.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 1: Data Input -->
+        <div class="dashboard-step">
+            <h4><span class="step-number">1</span> Input Your Sales Data</h4>
+            <p class="text-muted">Start by providing your historical sales data to generate accurate forecasts.</p>
+            
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-database me-2"></i>Data Input</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="nav nav-pills mb-3" id="dataInputTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="manual-tab" data-bs-toggle="pill" data-bs-target="#manual" type="button" role="tab">Manual Input</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="csv-tab" data-bs-toggle="pill" data-bs-target="#csv" type="button" role="tab">CSV Upload</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="erp-tab" data-bs-toggle="pill" data-bs-target="#erp" type="button" role="tab">ERP Integration</button>
+                                </li>
+                            </ul>
+                            
+                            <div class="tab-content" id="dataInputTabsContent">
+                                <div class="tab-pane fade show active" id="manual" role="tabpanel">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Base Sales (Average Daily Sales in $)</label>
+                                                <input type="number" class="form-control" id="baseSales" value="10000" min="1000" step="1000">
+                                                <div class="help-text">The average amount of sales per day</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Sales Trend (% Change Per Month)</label>
+                                                <input type="number" class="form-control" id="salesTrend" value="5" min="-20" max="20" step="1">
+                                                <div class="help-text">Positive for growth, negative for decline</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Seasonality Strength</label>
+                                                <select class="form-select" id="seasonality">
+                                                    <option value="low">Low</option>
+                                                    <option value="medium" selected>Medium</option>
+                                                    <option value="high">High</option>
+                                                </select>
+                                                <div class="help-text">How much seasonal variation affects your sales</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Promotion Impact</label>
+                                                <select class="form-select" id="promotionImpact">
+                                                    <option value="low">Low</option>
+                                                    <option value="medium" selected>Medium</option>
+                                                    <option value="high">High</option>
+                                                </select>
+                                                <div class="help-text">How much promotions affect your sales</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Historical Data Points (Days)</label>
+                                                <input type="number" class="form-control" id="historyDays" value="90" min="30" max="365" step="30">
+                                                <div class="help-text">How many days of historical data to generate</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Forecast Horizon (Days)</label>
+                                                <input type="number" class="form-control" id="forecastDays" value="30" min="7" max="90" step="7">
+                                                <div class="help-text">How many days to forecast into the future</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-primary mt-3" id="generateData">
+                                        <i class="fas fa-cog me-2"></i>Generate Data & Forecast
+                                    </button>
+                                </div>
+                                <div class="tab-pane fade" id="csv" role="tabpanel">
+                                    <div class="upload-area" id="uploadArea">
+                                        <i class="fas fa-cloud-upload-alt fa-3x mb-3"></i>
+                                        <h5>Upload CSV File</h5>
+                                        <p class="text-muted">Drag & drop your CSV file here or click to browse</p>
+                                        <input type="file" id="csvUpload" accept=".csv" class="d-none">
+                                        <p class="mt-3"><small>CSV should include columns: date, sales, [promotions, temperature, holiday (optional)]</small></p>
+                                    </div>
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>After uploading, click "Use This Data" to generate forecasts
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="erp" role="tabpanel">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>Connect to your ERP system for automatic data synchronization
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">ERP System</label>
+                                                <select class="form-select" id="erpSystem">
+                                                    <option value="">Select your ERP</option>
+                                                    <option value="sap">SAP</option>
+                                                    <option value="oracle">Oracle NetSuite</option>
+                                                    <option value="dynamics">Microsoft Dynamics</option>
+                                                    <option value="salesforce">Salesforce</option>
+                                                    <option value="other">Other System</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Sync Frequency</label>
+                                                <select class="form-select" id="syncFrequency">
+                                                    <option value="daily">Daily</option>
+                                                    <option value="weekly">Weekly</option>
+                                                    <option value="monthly">Monthly</option>
+                                                    <option value="realtime">Real-time</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">API Key</label>
+                                        <input type="password" class="form-control" id="apiKey" placeholder="Enter your API key">
+                                    </div>
+                                    <button class="btn btn-primary mt-3" id="connectERP">
+                                        <i class="fas fa-plug me-2"></i>Connect to ERP
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Forecast Results -->
+        <div class="dashboard-step d-none" id="resultsSection">
+            <h4><span class="step-number">2</span> Forecast Results & Analysis</h4>
+            <p class="text-muted">Review your sales forecast and key performance indicators.</p>
+            
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="control-panel">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label class="form-label">Forecast Level</label>
+                                <select class="form-select" id="forecastLevel">
+                                    <option value="overall">Overall</option>
+                                    <option value="region">Region</option>
+                                    <option value="store">Store</option>
+                                    <option value="category">Category</option>
+                                    <option value="product">Product</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Time Horizon</label>
+                                <select class="form-select" id="timeHorizon">
+                                    <option value="7">7 days</option>
+                                    <option value="30" selected>30 days</option>
+                                    <option value="90">90 days</option>
+                                    <option value="180">180 days</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Model Selection</label>
+                                <select class="form-select" id="modelSelection">
+                                    <option value="auto">Auto Select (Best Model)</option>
+                                    <option value="arima">ARIMA</option>
+                                    <option value="lstm">LSTM</option>
+                                    <option value="xgboost">XGBoost</option>
+                                    <option value="ensemble">Ensemble</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">&nbsp;</label>
+                                <button class="btn btn-primary w-100" id="updateForecast">
+                                    <i class="fas fa-sync-alt me-2"></i>Update Forecast
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3 d-none" id="metricsSection">
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body metric-card">
+                            <div class="metric-value" id="predictedSales">$0</div>
+                            <div class="metric-label">Predicted Next 30 Days</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body metric-card">
+                            <div class="metric-value" id="forecastAccuracy">0%</div>
+                            <div class="metric-label">Forecast Accuracy (MAPE)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body metric-card">
+                            <div class="metric-value" id="expectedGrowth">0%</div>
+                            <div class="metric-label">Expected Growth</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body metric-card">
+                            <div class="metric-value" id="stockoutRisk">-</div>
+                            <div class="metric-label">Stockout Risk</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Visualizations -->
+        <div class="dashboard-step d-none" id="visualizationSection">
+            <h4><span class="step-number">3</span> Advanced Visualizations</h4>
+            <p class="text-muted">Explore your data through interactive visualizations and insights.</p>
+            
+            <div class="row mt-3">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-chart-line me-2"></i>Sales Forecast</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="forecastChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-info-circle me-2"></i>Forecast Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="forecast-confidence">
+                                <h6>Confidence Interval</h6>
+                                <p>95% confidence that actual sales will fall between <span id="confidenceLower">$0</span> and <span id="confidenceUpper">$0</span></p>
+                            </div>
+                            <div class="mt-3">
+                                <h6>Model Performance</h6>
+                                <div>
+                                    <span class="model-badge model-arima">ARIMA</span>
+                                    <span class="model-badge model-lstm">LSTM</span>
+                                    <span class="model-badge model-xgboost">XGBoost</span>
+                                </div>
+                                <div class="mt-2">
+                                    <small class="text-muted">Best performing model: <span id="bestModel">ARIMA</span></small>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <h6>Key Influencers</h6>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Seasonality
+                                        <span class="badge bg-primary rounded-pill">High Impact</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Promotions
+                                        <span class="badge bg-primary rounded-pill">Medium Impact</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Market Trends
+                                        <span class="badge bg-primary rounded-pill">Low Impact</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-chart-bar me-2"></i>Trend Decomposition</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="trendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-exclamation-triangle me-2"></i>Anomaly Detection</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="anomalyChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Scenario Analysis -->
+        <div class="dashboard-step d-none" id="scenarioSection">
+            <h4><span class="step-number">4</span> Scenario Analysis</h4>
+            <p class="text-muted">Test different business scenarios to understand potential outcomes.</p>
+            
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-sliders-h me-2"></i>Scenario Controls</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="slider-container">
+                                        <label class="form-label">Promotion Intensity</label>
+                                        <input type="range" class="form-range" id="promotionSlider" min="0" max="100" value="50">
+                                        <div class="slider-value" id="promotionValue">50%</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="slider-container">
+                                        <label class="form-label">Price Change (%)</label>
+                                        <input type="range" class="form-range" id="priceSlider" min="-20" max="20" value="0">
+                                        <div class="slider-value" id="priceValue">0%</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="slider-container">
+                                        <label class="form-label">Economic Conditions</label>
+                                        <input type="range" class="form-range" id="economicSlider" min="-10" max="10" value="0">
+                                        <div class="slider-value" id="economicValue">Neutral</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="slider-container">
+                                        <label class="form-label">Competitor Activity</label>
+                                        <input type="range" class="form-range" id="competitorSlider" min="0" max="100" value="50">
+                                        <div class="slider-value" id="competitorValue">Medium</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="scenario-comparison mt-4">
+                                <h6>Scenario Impact</h6>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="card">
+                                            <div class="card-body text-center">
+                                                <div class="metric-value" id="scenarioSales">$0</div>
+                                                <div class="metric-label">Projected Sales</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card">
+                                            <div class="card-body text-center">
+                                                <div class="metric-value" id="scenarioChange">0%</div>
+                                                <div class="metric-label">Change from Base</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card">
+                                            <div class="card-body text-center">
+                                                <div class="metric-value" id="scenarioProfit">0%</div>
+                                                <div class="metric-label">Profit Impact</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card">
+                                            <div class="card-body text-center">
+                                                <div class="metric-value" id="scenarioRisk">-</div>
+                                                <div class="metric-label">Risk Level</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 5: Preventive Actions -->
+        <div class="dashboard-step d-none" id="preventiveSection">
+            <h4><span class="step-number">5</span> Preventive Actions & Recommendations</h4>
+            <p class="text-muted">Take proactive measures based on forecast insights.</p>
+            
+            <div class="row mt-3">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-lightbulb me-2"></i>Recommendations</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="recommendation-card">
+                                <h6><i class="fas fa-box me-2"></i>Inventory Optimization</h6>
+                                <p>Based on the forecast, we recommend increasing safety stock for high-demand products by 15% to mitigate potential stockout risks.</p>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <small class="text-muted">Estimated impact: $12,500 potential revenue preservation</small>
+                                    <button class="btn btn-sm btn-outline-primary">Implement</button>
+                                </div>
+                            </div>
+                            <div class="recommendation-card">
+                                <h6><i class="fas fa-percentage me-2"></i>Promotion Planning</h6>
+                                <p>Schedule a promotion during the week of July 15th to capitalize on predicted demand patterns and maximize ROI.</p>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <small class="text-muted">Expected ROI: 3.2x</small>
+                                    <button class="btn btn-sm btn-outline-primary">Schedule</button>
+                                </div>
+                            </div>
+                            <div class="recommendation-card">
+                                <h6><i class="fas fa-truck me-2"></i>Supply Chain Adjustment</h6>
+                                <p>Consider expediting shipments for SKU #A473B2 to ensure adequate stock levels during the forecasted demand peak.</p>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <small class="text-muted">Potential risk reduction: 42%</small>
+                                    <button class="btn btn-sm btn-outline-primary">Review</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-bell me-2"></i>Predictive Alerts</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning">
+                                <h6><span class="risk-indicator risk-medium"></span>Moderate Risk</h6>
+                                <p class="mb-0">Potential stockout detected for Product Category B in 23 days</p>
+                            </div>
+                            <div class="alert alert-info mt-3">
+                                <h6><span class="risk-indicator risk-low"></span>Opportunity</h6>
+                                <p class="mb-0">Higher than expected demand predicted for Region West in 15 days</p>
+                            </div>
+                            <div class="alert alert-secondary mt-3">
+                                <h6><span class="risk-indicator risk-low"></span>Info</h6>
+                                <p class="mb-0">Weather patterns suggest potential delivery delays next week</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dark/Light Mode Toggle -->
+    <div class="mode-toggle" id="modeToggle">
+        <i class="fas fa-moon"></i>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const generateDataBtn = document.getElementById('generateData');
+            const resultsSection = document.getElementById('resultsSection');
+            const metricsSection = document.getElementById('metricsSection');
+            const visualizationSection = document.getElementById('visualizationSection');
+            const scenarioSection = document.getElementById('scenarioSection');
+            const preventiveSection = document.getElementById('preventiveSection');
+            const alertSection = document.getElementById('alertSection');
+            const modeToggle = document.getElementById('modeToggle');
+            
+            // Generate initial data and forecast
+            generateDataBtn.addEventListener('click', function() {
+                // Show all sections
+                resultsSection.classList.remove('d-none');
+                metricsSection.classList.remove('d-none');
+                visualizationSection.classList.remove('d-none');
+                scenarioSection.classList.remove('d-none');
+                preventiveSection.classList.remove('d-none');
+                alertSection.classList.remove('d-none');
+                
+                // Update metrics
+                document.getElementById('predictedSales').textContent = '$245,789';
+                document.getElementById('forecastAccuracy').textContent = '92.4%';
+                document.getElementById('expectedGrowth').textContent = '+5.2%';
+                document.getElementById('stockoutRisk').innerHTML = '<span class="text-warning">Medium</span>';
+                
+                // Update confidence interval
+                document.getElementById('confidenceLower').textContent = '$232,450';
+                document.getElementById('confidenceUpper').textContent = '$258,330';
+                
+                // Generate charts
+                generateForecastChart();
+                generateTrendChart();
+                generateAnomalyChart();
+                generateMultiProductChart();
+                generateSegmentationChart();
+                generatePricingChart();
+                generateInventoryChart();
+                
+                // Scroll to results
+                resultsSection.scrollIntoView({ behavior: 'smooth' });
+            });
+            
+            // Dark/Light mode toggle
+            modeToggle.addEventListener('click', function() {
+                document.body.classList.toggle('dark-mode');
+                const icon = modeToggle.querySelector('i');
+                if (document.body.classList.contains('dark-mode')) {
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                } else {
+                    icon.classList.remove('fa-sun');
+                    icon.classList.add('fa-moon');
+                }
+            });
+            
+            // Slider value updates
+            const promotionSlider = document.getElementById('promotionSlider');
+            const priceSlider = document.getElementById('priceSlider');
+            const economicSlider = document.getElementById('economicSlider');
+            const competitorSlider = document.getElementById('competitorSlider');
+            
+            promotionSlider.addEventListener('input', function() {
+                document.getElementById('promotionValue').textContent = this.value + '%';
+                updateScenarioAnalysis();
+            });
+            
+            priceSlider.addEventListener('input', function() {
+                document.getElementById('priceValue').textContent = this.value + '%';
+                updateScenarioAnalysis();
+            });
+            
+            economicSlider.addEventListener('input', function() {
+                const value = parseInt(this.value);
+                let label = 'Neutral';
+                if (value < -5) label = 'Severe Recession';
+                else if (value < 0) label = 'Mild Recession';
+                else if (value > 5) label = 'Boom';
+                else if (value > 0) label = 'Growth';
+                document.getElementById('economicValue').textContent = label;
+                updateScenarioAnalysis();
+            });
+            
+            competitorSlider.addEventListener('input', function() {
+                const value = parseInt(this.value);
+                let label = 'Low';
+                if (value > 70) label = 'High';
+                else if (value > 30) label = 'Medium';
+                document.getElementById('competitorValue').textContent = label;
+                updateScenarioAnalysis();
+            });
+            
+            // View recommendations button
+            document.getElementById('viewRecommendations').addEventListener('click', function() {
+                preventiveSection.scrollIntoView({ behavior: 'smooth' });
+            });
+            
+            // Update scenario analysis
+            function updateScenarioAnalysis() {
+                const promotion = parseInt(promotionSlider.value);
+                const price = parseInt(priceSlider.value);
+                const economic = parseInt(economicSlider.value);
+                const competitor = parseInt(competitorSlider.value);
+                
+                // Simple model to calculate impact
+                let salesImpact = 200000 + (promotion * 300) - (Math.abs(price) * 1000) + (economic * 5000) - (competitor * 200);
+                let change = ((salesImpact - 200000) / 200000 * 100).toFixed(1);
+                let profitImpact = (change - (price > 0 ? price : 0) * 0.7).toFixed(1);
+                
+                let riskLevel = 'Low';
+                if (economic < -5 || competitor > 80) riskLevel = 'High';
+                else if (economic < 0 || competitor > 60) riskLevel = 'Medium';
+                
+                document.getElementById('scenarioSales').textContent = '$' + salesImpact.toLocaleString();
+                document.getElementById('scenarioChange').textContent = (change > 0 ? '+' : '') + change + '%';
+                document.getElementById('scenarioProfit').textContent = (profitImpact > 0 ? '+' : '') + profitImpact + '%';
+                document.getElementById('scenarioRisk').innerHTML = riskLevel === 'High' ? 
+                    '<span class="text-danger">High</span>' : 
+                    (riskLevel === 'Medium' ? '<span class="text-warning">Medium</span>' : '<span class="text-success">Low</span>');
+            }
+            
+            // Initialize scenario analysis
+            updateScenarioAnalysis();
+            
+            // Chart generation functions
+            function generateForecastChart() {
+                const ctx = document.getElementById('forecastChart').getContext('2d');
+                
+                // Generate dates for the last 90 days and next 30 days
+                const dates = [];
+                const historicalData = [];
+                const forecastData = [];
+                const confidenceUpper = [];
+                const confidenceLower = [];
+                
+                const today = new Date();
+                const baseSales = 10000;
+                const trend = 0.0017; // 5% monthly growth compounded daily
+                let currentSales = baseSales;
+                
+                // Generate historical data with some randomness
+                for (let i = 89; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(today.getDate() - i);
+                    dates.push(date.toISOString().split('T')[0]);
+                    
+                    // Add seasonality (weekly pattern)
+                    const dayOfWeek = date.getDay();
+                    let seasonality = 1;
+                    if (dayOfWeek === 0 || dayOfWeek === 6) seasonality = 1.2; // Weekend boost
+                    
+                    // Add some randomness
+                    const randomFactor = 0.9 + Math.random() * 0.2;
+                    
+                    historicalData.push(currentSales * seasonality * randomFactor);
+                    
+                    // Apply trend
+                    currentSales = currentSales * (1 + trend);
+                }
+                
+                // Generate forecast data
+                for (let i = 1; i <= 30; i++) {
+                    const date = new Date();
+                    date.setDate(today.getDate() + i);
+                    dates.push(date.toISOString().split('T')[0]);
+                    
+                    // Add seasonality (weekly pattern)
+                    const dayOfWeek = date.getDay();
+                    let seasonality = 1;
+                    if (dayOfWeek === 0 || dayOfWeek === 6) seasonality = 1.2; // Weekend boost
+                    
+                    forecastData.push(currentSales * seasonality);
+                    
+                    // Confidence intervals
+                    confidenceUpper.push(currentSales * seasonality * 1.1);
+                    confidenceLower.push(currentSales * seasonality * 0.9);
+                    
+                    // Apply trend
+                    currentSales = currentSales * (1 + trend);
+                }
+                
+                // Create the chart
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [
+                            {
+                                label: 'Historical Sales',
+                                data: historicalData,
+                                borderColor: 'rgba(52, 152, 219, 1)',
+                                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                                fill: false,
+                                tension: 0.1
+                            },
+                            {
+                                label: 'Forecast',
+                                data: [...Array(90).fill(null), ...forecastData],
+                                borderColor: 'rgba(46, 204, 113, 1)',
+                                backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                                fill: false,
+                                tension: 0.1,
+                                borderDash: [5, 5]
+                            },
+                            {
+                                label: 'Upper Confidence',
+                                data: [...Array(90).fill(null), ...confidenceUpper],
+                                borderColor: 'rgba(46, 204, 113, 0.5)',
+                                backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                                fill: '+1',
+                                pointStyle: false,
+                                tension: 0.1,
+                                borderDash: [5, 5]
+                            },
+                            {
+                                label: 'Lower Confidence',
+                                data: [...Array(90).fill(null), ...confidenceLower],
+                                borderColor: 'rgba(46, 204, 113, 0.5)',
+                                backgroundColor: 'rgba(255, 255, 255, 1)',
+                                fill: false,
+                                pointStyle: false,
+                                tension: 0.1,
+                                borderDash: [5, 5]
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'day',
+                                    tooltipFormat: 'MMM d, yyyy'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Sales ($)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+            
+            function generateTrendChart() {
+                const ctx = document.getElementById('trendChart').getContext('2d');
+                
+                // Generate sample data for trend decomposition
+                const dates = [];
+                const trendData = [];
+                const seasonalData = [];
+                const residualData = [];
+                
+                const today = new Date();
+                let baseValue = 10000;
+                
+                for (let i = 89; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(today.getDate() - i);
+                    dates.push(date.toISOString().split('T')[0]);
+                    
+                    // Trend component
+                    trendData.push(baseValue);
+                    
+                    // Seasonal component (weekly pattern)
+                    const dayOfWeek = date.getDay();
+                    let seasonal = 0;
+                    if (dayOfWeek === 0) seasonal = 800;
+                    else if (dayOfWeek === 6) seasonal = 600;
+                    else if (dayOfWeek === 5) seasonal = 300;
+                    else seasonal = -200;
+                    
+                    seasonalData.push(seasonal);
+                    
+                    // Residual component (random noise)
+                    residualData.push((Math.random() - 0.5) * 400);
+                    
+                    // Increase base value for trend
+                    baseValue += 50;
+                }
+                
+                // Create the chart
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [
+                            {
+                                label: 'Trend',
+                                data: trendData,
+                                borderColor: 'rgba(52, 152, 219, 1)',
+                                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Seasonality',
+                                data: seasonalData,
+                                borderColor: 'rgba(155, 89, 182, 1)',
+                                backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Residual',
+                                data: residualData,
+                                borderColor: 'rgba(241, 196, 15, 1)',
+                                backgroundColor: 'rgba(241, 196, 15, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'day',
+                                    tooltipFormat: 'MMM d, yyyy'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Component Value'
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+            
+            function generateAnomalyChart() {
+                const ctx = document.getElementById('anomalyChart').getContext('2d');
+                
+                // Generate sample data with anomalies
+                const dates = [];
+                const salesData = [];
+                const anomalyPoints = [];
+                
+                const today = new Date();
+                let currentSales = 10000;
+                
+                for (let i = 89; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(today.getDate() - i);
+                    dates.push(date.toISOString().split('T')[0]);
+                    
+                    // Add trend
+                    currentSales = currentSales * (1 + 0.002);
+                    
+                    // Add seasonality (weekly pattern)
+                    const dayOfWeek = date.getDay();
+                    let seasonality = 1;
+                    if (dayOfWeek === 0 || dayOfWeek === 6) seasonality = 1.3;
+                    
+                    // Add some randomness
+                    let randomFactor = 0.9 + Math.random() * 0.2;
+                    
+                    // Create a few anomalies
+                    let isAnomaly = false;
+                    if (i === 30 || i === 45 || i === 70) {
+                        randomFactor = 1.7; // Spike
+                        isAnomaly = true;
+                    } else if (i === 60 || i === 25) {
+                        randomFactor = 0.5; // Dip
+                        isAnomaly = true;
+                    }
+                    
+                    const salesValue = currentSales * seasonality * randomFactor;
+                    salesData.push(salesValue);
+                    
+                    if (isAnomaly) {
+                        anomalyPoints.push({x: date.toISOString().split('T')[0], y: salesValue});
+                    } else {
+                        anomalyPoints.push(null);
+                    }
+                }
+                
+                // Create the chart
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [
+                            {
+                                label: 'Sales',
+                                data: salesData,
+                                borderColor: 'rgba(52, 152, 219, 1)',
+                                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Anomaly',
+                                data: anomalyPoints,
+                                pointBackgroundColor: 'rgba(231, 76, 60, 1)',
+                                pointRadius: 5,
+                                pointStyle: 'circle',
+                                showLine: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'day',
+                                    tooltipFormat: 'MMM d, yyyy'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Sales ($)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+            
+            function generateMultiProductChart() {
+                const ctx = document.getElementById('multiProductChart').getContext('2d');
+                
+                // Generate sample data for multiple products
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const productA = [12000, 12500, 13200, 14500, 15200, 16800, 17500, 18200, 17400, 16300, 15800, 17200];
+                const productB = [8000, 8200, 8700, 9300, 10100, 11200, 12500, 11800, 10700, 9800, 9200, 9900];
+                const productC = [5000, 5200, 5400, 5800, 6200, 7100, 7800, 8200, 7900, 7200, 6800, 7500];
+                
+                // Create the chart
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: months,
+                        datasets: [
+                            {
+                                label: 'Product A',
+                                data: productA,
+                                backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                            },
+                            {
+                                label: 'Product B',
+                                data: productB,
+                                backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                            },
+                            {
+                                label: 'Product C',
+                                data: productC,
+                                backgroundColor: 'rgba(155, 89, 182, 0.7)',
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                stacked: false,
+                                title: {
+                                    display: true,
+                                    text: 'Month'
+                                }
+                            },
+                            y: {
+                                stacked: false,
+                                title: {
+                                    display: true,
+                                    text: 'Sales ($)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+            
+            function generateSegmentationChart() {
+                const ctx = document.getElementById('segmentationChart').getContext('2d');
+                
+                // Generate sample data for customer segments
+                const segments = ['New Customers', 'Occasional', 'Regulars', 'VIPs', 'Churned'];
+                const segmentData = [120, 85, 65, 30, 42];
+                const segmentColors = [
+                    'rgba(52, 152, 219, 0.7)',
+                    'rgba(46, 204, 113, 0.7)',
+                    'rgba(155, 89, 182, 0.7)',
+                    'rgba(241, 196, 15, 0.7)',
+                    'rgba(231, 76, 60, 0.7)'
+                ];
+                
+                // Create the chart
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: segments,
+                        datasets: [{
+                            data: segmentData,
+                            backgroundColor: segmentColors,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = Math.round((value / total) * 100);
+                                        return `${label}: ${value} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            function generatePricingChart() {
+                const ctx = document.getElementById('pricingChart').getContext('2d');
+                
+                // Generate sample data for price elasticity
+                const prices = [10, 15, 20, 25, 30, 35, 40];
+                const demand = [1200, 950, 800, 650, 500, 400, 300];
+                const revenue = prices.map((price, index) => price * demand[index]);
+                
+                // Create the chart
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: prices,
+                        datasets: [
+                            {
+                                label: 'Demand',
+                                data: demand,
+                                borderColor: 'rgba(52, 152, 219, 1)',
+                                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                                yAxisID: 'y',
+                                fill: false,
+                                tension: 0.1
+                            },
+                            {
+                                label: 'Revenue',
+                                data: revenue,
+                                borderColor: 'rgba(46, 204, 113, 1)',
+                                backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                                yAxisID: 'y1',
+                                fill: false,
+                                tension: 0.1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Price ($)'
+                                }
+                            },
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Demand (Units)'
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Revenue ($)'
+                                },
+                                grid: {
+                                    drawOnChartArea: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+            
+            function generateInventoryChart() {
+                const ctx = document.getElementById('inventoryChart').getContext('2d');
+                
+                // Generate sample data for inventory optimization
+                const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                const demand = [120, 135, 145, 130, 160, 220, 180];
+                const currentInventory = [180, 160, 140, 120, 100, 80, 60];
+                const optimalInventory = demand.map(d => d * 1.5);
+                
+                // Create the chart
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: days,
+                        datasets: [
+                            {
+                                label: 'Demand',
+                                data: demand,
+                                borderColor: 'rgba(52, 152, 219, 1)',
+                                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                                fill: false,
+                                tension: 0.1
+                            },
+                            {
+                                label: 'Current Inventory',
+                                data: currentInventory,
+                                borderColor: 'rgba(231, 76, 60, 1)',
+                                backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                                fill: false,
+                                tension: 0.1
+                            },
+                            {
+                                label: 'Optimal Inventory',
+                                data: optimalInventory,
+                                borderColor: 'rgba(46, 204, 113, 1)',
+                                backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                                fill: false,
+                                tension: 0.1,
+                                borderDash: [5, 5]
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Day'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Units'
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Initialize the dashboard with some sample charts
+            generateMultiProductChart();
+            generateSegmentationChart();
+            generatePricingChart();
+            generateInventoryChart();
+        });
+    </script>
+</body>
+</html>
